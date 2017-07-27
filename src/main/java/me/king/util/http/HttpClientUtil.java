@@ -1,6 +1,7 @@
 package me.king.util.http;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +100,57 @@ public class HttpClientUtil {
 		return null;
 		
 	}
+	
+	/**
+	 * 根据服务获取服务相应内容
+	 * @param url
+	 * @param params
+	 * @param heads
+	 * @param timeOut
+	 * @return
+	 * @ 
+	 */
+	public static void writServiceResponse(String url,OutputStream out, Map<String, String> params, Map<String, String> heads, Integer timeOut)  {
+		CloseableHttpClient httpClient = HttpClients.createDefault();
+		try {
+			URIBuilder uri = new URIBuilder();
+			uri.setPath(url);
+			if(params != null){
+				for(Map.Entry<String, String> entry : params.entrySet()){
+					uri.addParameter(entry.getKey(), entry.getValue());
+				}
+			}
+			HttpGet httpGet = new HttpGet(uri.build());
+			if(heads != null){
+				for(Map.Entry<String, String> entry : heads.entrySet()){
+					httpGet.addHeader(entry.getKey(), entry.getValue());
+				}
+			}
+			RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(timeOut).setConnectTimeout(timeOut).setSocketTimeout(timeOut).build();
+			httpGet.setConfig(requestConfig);
+			CloseableHttpResponse response = httpClient.execute(httpGet);
+			try {
+				if(HttpStatus.SC_OK == response.getStatusLine().getStatusCode()){
+					HttpEntity entity = response.getEntity();
+					entity.writeTo(out);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}finally{
+				response.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			try {
+				httpClient.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	
 	/**
 	 * 根据服务获取服务相应内容
 	 * @param url
